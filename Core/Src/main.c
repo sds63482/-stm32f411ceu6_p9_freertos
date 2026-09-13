@@ -431,7 +431,9 @@ void StartTask02(void *argument)
 
         //BME280_ReadData(&data.temperature, &data.humidity, NULL);
 
-        printf("lagg");
+        osMessageQueuePut(SensorDataQueueHandle, &data, 0, 0);
+
+        osDelay(1000);
 
     }
 
