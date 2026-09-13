@@ -19,7 +19,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-
+#include "ssd1306.h"
+#include "ssd1306_fonts.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -44,7 +45,27 @@
 I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart1;
+#include <stdio.h>
 
+#ifdef __GNUC__
+
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+
+#else
+
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+
+#endif
+
+PUTCHAR_PROTOTYPE
+
+{
+
+    HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+
+    return ch;
+
+}
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
@@ -69,7 +90,7 @@ const osThreadAttr_t DisplayTask_attributes = {
 /* Definitions for ButtonTask */
 osThreadId_t ButtonTaskHandle;
 const osThreadAttr_t ButtonTask_attributes = {
-  .name = "ButtonTask",
+  .name = "ButtonTask",/////////////////////////////////////////////////////////////////////////////////////////////////////////
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
@@ -184,6 +205,97 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
+  typedef struct {
+
+      float temperature;
+
+      float humidity;
+
+  } SensorData_t;
+
+  void StartSensorTask(void *argument)
+
+  {
+
+      SensorData_t data;
+
+      for(;;)
+
+      {
+
+          // 讀取BME280(沿用階段七程式碼)
+
+          //BME280_ReadData(&data.temperature, &data.humidity, NULL);
+
+          osMessageQueuePut(SensorDataQueueHandle, &data, 0, 0);
+
+          osDelay(1000);
+
+      }
+
+  }
+
+  void StartDisplayTask(void *argument)
+
+  {
+
+      SensorData_t data;
+
+      for(;;)
+
+      {
+
+          if (osMessageQueueGet(SensorDataQueueHandle, &data, NULL, osWaitForever) == osOK)
+
+          {
+
+              // 更新OLED顯示(沿用階段八程式碼)
+
+              char line[32];
+
+              sprintf(line, "T:%.1f H:%.1f", data.temperature, data.humidity);
+
+              ssd1306_Fill(Black);
+
+              ssd1306_SetCursor(0, 0);
+
+              ssd1306_WriteString(line, Font_7x10, White);
+
+              ssd1306_UpdateScreen();
+
+          }
+
+      }
+
+  }
+
+  void StartButtonTask(void *argument)
+
+  {
+
+      for(;;)
+
+      {
+
+          // 可用osSemaphoreAcquire等待按鈕中斷發出的Semaphore
+
+          // 這裡簡化為輪詢示範
+
+          if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)
+
+          {
+
+              printf("Button pressed in RTOS task\r\n");
+
+              osDelay(200);  // 簡易防彈跳
+
+          }
+
+          osDelay(10);
+
+      }
+
+  }
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
