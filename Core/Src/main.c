@@ -475,6 +475,20 @@ void StartTask03(void *argument)
 
 	              ssd1306_UpdateScreen();
 
+	              osDelay(500);
+
+
+
+	              sprintf(line, "fuckkkkkkkkk", data.temperature, data.humidity);
+
+	              ssd1306_Fill(Black);
+
+				  ssd1306_SetCursor(0, 0);
+
+				  ssd1306_WriteString(line, Font_7x10, White);
+
+	              ssd1306_UpdateScreen();
+
 	          }
 
 	      }
