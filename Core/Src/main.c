@@ -126,6 +126,13 @@ void StartTask04(void *argument);
   * @brief  The application entry point.
   * @retval int
   */
+typedef struct {
+
+     float temperature;
+
+     float humidity;
+
+ } SensorData_t;
 int main(void)
 {
 
@@ -191,7 +198,7 @@ int main(void)
   DisplayTaskHandle = osThreadNew(StartTask03, NULL, &DisplayTask_attributes);
 
   /* creation of ButtonTask */
-  ButtonTaskHandle = osThreadNew(StartTask04, NULL, &ButtonTask_attributes);
+  ButtonTaskHandle = osThreadNew(StartTask04, NULL, &ButtonTask_attributes);/////////////////////////StartTask04
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -205,33 +212,12 @@ int main(void)
   osKernelStart();
 
   /* We should never get here as control is now taken by the scheduler */
-  typedef struct {
 
-      float temperature;
-
-      float humidity;
-
-  } SensorData_t;
 
   void StartSensorTask(void *argument)
 
   {
 
-      SensorData_t data;
-
-      for(;;)
-
-      {
-
-          // 讀取BME280(沿用階段七程式碼)
-
-          //BME280_ReadData(&data.temperature, &data.humidity, NULL);
-
-          osMessageQueuePut(SensorDataQueueHandle, &data, 0, 0);
-
-          osDelay(1000);
-
-      }
 
   }
 
@@ -239,33 +225,7 @@ int main(void)
 
   {
 
-      SensorData_t data;
 
-      for(;;)
-
-      {
-
-          if (osMessageQueueGet(SensorDataQueueHandle, &data, NULL, osWaitForever) == osOK)
-
-          {
-
-              // 更新OLED顯示(沿用階段八程式碼)
-
-              char line[32];
-
-              sprintf(line, "T:%.1f H:%.1f", data.temperature, data.humidity);
-
-              ssd1306_Fill(Black);
-
-              ssd1306_SetCursor(0, 0);
-
-              ssd1306_WriteString(line, Font_7x10, White);
-
-              ssd1306_UpdateScreen();
-
-          }
-
-      }
 
   }
 
@@ -273,27 +233,7 @@ int main(void)
 
   {
 
-      for(;;)
 
-      {
-
-          // 可用osSemaphoreAcquire等待按鈕中斷發出的Semaphore
-
-          // 這裡簡化為輪詢示範
-
-          if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)
-
-          {
-
-              printf("Button pressed in RTOS task\r\n");
-
-              osDelay(200);  // 簡易防彈跳
-
-          }
-
-          osDelay(10);
-
-      }
 
   }
 
@@ -436,7 +376,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
@@ -481,10 +421,22 @@ void StartTask02(void *argument)
 {
   /* USER CODE BEGIN StartTask02 */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+    SensorData_t data;
+
+    for(;;)
+
+    {
+
+        // 讀取BME280(沿用階段七程式碼)
+
+        //BME280_ReadData(&data.temperature, &data.humidity, NULL);
+
+        osMessageQueuePut(SensorDataQueueHandle, &data, 0, 0);
+
+        osDelay(1000);
+
+    }
+
   /* USER CODE END StartTask02 */
 }
 
@@ -499,10 +451,33 @@ void StartTask03(void *argument)
 {
   /* USER CODE BEGIN StartTask03 */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	 SensorData_t data;
+
+	      for(;;)
+
+	      {
+
+	          if (osMessageQueueGet(SensorDataQueueHandle, &data, NULL, osWaitForever) == osOK)
+
+	          {
+
+	              // 更新OLED顯示(沿用階段八程式碼)
+
+	              char line[32];
+
+	              sprintf(line, "T:%.1f H:%.1f", data.temperature, data.humidity);
+
+	              ssd1306_Fill(Black);
+
+	              ssd1306_SetCursor(0, 0);
+
+	              ssd1306_WriteString(line, Font_7x10, White);
+
+	              ssd1306_UpdateScreen();
+
+	          }
+
+	      }
   /* USER CODE END StartTask03 */
 }
 
@@ -517,10 +492,27 @@ void StartTask04(void *argument)
 {
   /* USER CODE BEGIN StartTask04 */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+    for(;;)
+
+      {
+
+          // 可用osSemaphoreAcquire等待按鈕中斷發出的Semaphore
+
+          // 這裡簡化為輪詢示範
+
+          if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET)
+
+          {
+
+              printf("Button pressed in RTOS task\r\n");
+
+              osDelay(200);  // 簡易防彈跳
+
+          }
+
+          osDelay(10);
+
+      }
   /* USER CODE END StartTask04 */
 }
 
